@@ -33,6 +33,7 @@ bot = commands.Bot(command_prefix=prefix, intents=intents)
 
 @bot.event
 async def on_ready() -> None:
+    log.info(f"Discord.py version: `{discord.__version__}`")
     log.info(f"Logged in as `{bot.user}`")
     for module in config["modules"]:
         try:
