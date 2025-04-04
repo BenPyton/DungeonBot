@@ -41,24 +41,36 @@ async def on_ready() -> None:
             log.info(f"Module `{module}` successfully loaded.")
         except Exception as e:
             log.error(f"Failed to load module `{module}`: {e}")
-
     log.info(f"Bot is ready.")
 
-@bot.command(aliases=["exit"])
-@predicate.admin_only()
-async def shutdown(ctx: commands.Context) -> None:
-    await ctx.message.delete()
-    log.info(f"Shutting down bot...")
+@bot.tree.error
+async def on_app_command_error(interaction: discord.Interaction, error: discord.app_commands.AppCommandError):
+    if isinstance(error, discord.app_commands.CheckFailure):
+        # Handle check failures (e.g., user doesn't meet the requirements)
+        await log.failure(interaction, "You do not have permission to use this command.")
+    elif isinstance(error, discord.app_commands.CommandNotFound):
+        # Handle unknown commands
+        await log.failure(interaction, "This command does not exist.")
+    else:
+        # Handle other errors
+        await log.failure(interaction, "An unexpected error occurred while executing the command.")
+
+@bot.tree.command(description="Shutdown gracefully the bot")
+@predicate.app_is_bot_owner()
+async def shutdown(interaction: discord.Interaction) -> None:
+    log.info("Shutting down bot...")
+    await log.client(interaction, "Shutting down bot...")
     await bot.close()
+    log.info("Bot has been shut off.")
+
 
 def cleanup() -> None:
     log.info(f"Final cleanup")
     filehelper.saveConfig(config)
 
-@bot.command()
-@predicate.admin_only()
-async def setPrefix(ctx: commands.Context, new_prefix: str) -> None:
-    await ctx.message.delete()
+@bot.tree.command(description="Change the prefix for the bot's commands")
+@predicate.app_is_bot_owner()
+async def setprefix(interaction: discord.Interaction, new_prefix: str) -> None:
     global prefix
     log.info(f"Setting new command prefix to `{new_prefix}`")
 
@@ -66,121 +78,155 @@ async def setPrefix(ctx: commands.Context, new_prefix: str) -> None:
     config["prefix"] = new_prefix
     bot.command_prefix = new_prefix
 
-    await log.success(ctx, f"Command prefix successfully set to `{new_prefix}`")
+    await log.success(interaction, f"Command prefix successfully set to `{new_prefix}`")
+
+@bot.tree.command(description="Sync the slash commands added removed by modules")
+@predicate.app_is_bot_owner()
+async def sync(interaction: discord.Interaction) -> None:
+    global prefix
+    log.info("Syncing slash commands")
+    await bot.tree.sync()
+    await log.success(interaction, "Slash commands synced successfully!\n*It may take some times to propagate to all guilds...*")
     
 ####                        ####
 #       Module Management      #
 ####                        ####
 
-@bot.command(aliases=["enable"])
-@predicate.admin_only()
-async def load(ctx: commands.Context, module: str = None) -> None:
+def getAllModules() -> list[str]:
     """
-    Load a specific extension module
-
-    Parameters
-    ----------
-    module : str
-        The name of the module to load.
-        The entry point of the discord extension will be searched at `plugins/<module name>/main.py`
+    Get all available modules in the `plugins` directory
     """
+    available_modules: list[str] = []
+    for dir in os.listdir("plugins"):
+        available_modules.append(dir)
+    return available_modules
 
-    await ctx.message.delete()
+def isModuleActive(module: str) -> bool:
+    return True if bot.extensions.get(f"plugins.{module}.main") else False
 
-    if not module:
-        await log.failure(ctx, f"Command incorrectly used.\n> Usage: `{prefix}load <module>`")
-        return
+def getModuleStatus(module: str) -> str:
+    return "active :white_check_mark:" if isModuleActive(module) else "inactive :x:"
 
-    try:
-        await bot.load_extension(f"plugins.{module}.main")
-        config["modules"].append(module)
-        await log.success(ctx, f"Module `{module}` successfully loaded.")
-    except Exception as e:
-        await log.failure(ctx, f"Failed to load module `{module}`: `{e}`")
+@bot.tree.command(description="Manage modules of the bot (list/status/load/unload/reload)")
+@discord.app_commands.describe(command="The command to use on the bot's modules.")
+@discord.app_commands.choices(command=[
+    discord.app_commands.Choice(name="list", value="list"),
+    discord.app_commands.Choice(name="status", value="status"),
+    discord.app_commands.Choice(name="load", value="load"),
+    discord.app_commands.Choice(name="unload", value="unload"),
+    discord.app_commands.Choice(name="reload", value="reload"),
+    ])
+@predicate.app_is_bot_owner()
+async def modules(interaction: discord.Interaction, command: str, args: str = None) -> None:
+    args_list: list[str] = args.split(' ') if args else list()
+    
+    log.info(f"User `{interaction.user.name}` used command `{command}` with args {args_list} in guild `{interaction.guild.name}`")
 
-@bot.command(aliases=["disable"])
-@predicate.admin_only()
-async def unload(ctx: commands.Context, module: str) -> None:
+    if command == "list":
+        await log.client(interaction, listModules())
+    elif command == "status":
+        await log.client(interaction, modulesStatus(args_list))
+    elif command == "load":
+        result: tuple[bool, str] = await loadModules(args_list)
+        if not result[0]:
+            await log.failure(interaction, result[1])
+        else:
+            await log.client(interaction, result[1])
+    elif command == "unload":
+        result: tuple[bool, str] = await unloadModules(args_list)
+        if not result[0]:
+            await log.failure(interaction, result[1])
+        else:
+            await log.client(interaction, result[1])
+    elif command == "reload":
+        result: tuple[bool, str] = await reloadModules(args_list)
+        if not result[0]:
+            await log.failure(interaction, result[1])
+        else:
+            await log.client(interaction, result[1])
+    else:
+        await log.failure(interaction, f"Unsupported command: `{command}`")
+
+def listModules() -> str:
     """
-    Unload a specific extension module
-
-    Parameters
-    ----------
-    module : str
-        The name of the module to unload.
-        The entry point of the discord extension will be searched at `plugins/<module name>/main.py`
+    List all available modules in the `plugins` directory
     """
+    allModules: list[str] = getAllModules()
+    count: int = len(allModules)
+    available_modules: str = f"There are {count if count > 0 else 'no'} available module{'s' if count > 1 else ''}:\n"
+    for i, dir in enumerate(allModules):
+        available_modules += f"{dir}{', ' if i < count - 1 else ''}"
+    return available_modules
 
-    await ctx.message.delete()
-
-    if not module:
-        await log.failure(ctx, f"Command incorrectly used.\n> Usage: `{prefix}unload <module>`")
-        return
-
-    try:
-        await bot.unload_extension(f"plugins.{module}.main")
-        config["modules"].remove(module)
-        await log.success(ctx, f"Module `{module}` successfully unloaded.")
-    except Exception as e:
-        await log.failure(ctx, f"Failed to unload module `{module}`: `{e}`")
-
-@bot.command(aliases=["rl"])
-@predicate.admin_only()
-async def reload(ctx: commands.Context, module: str = None) -> None:
-    """
-    Reload a specific extension module
-
-    Parameters
-    ----------
-    module : str
-        The name of the module to reload.
-        The entry point of the discord extension will be searched at `plugins/<module name>/main.py`
-    """
-
-    await ctx.message.delete()
-
-    if not module:
-        await log.error(ctx, f"Command incorrectly used.\n> Usage: `{prefix}reload <module>`")
-        return
-
-    try:
-        await bot.reload_extension(f"plugins.{module}.main")
-        await log.success(ctx, f"Module `{module}` successfully reloaded.")
-    except Exception as e:
-        await log.failure(ctx, f"Failed to reload module `{module}`: `{e}`")
-
-@bot.command()
-@predicate.admin_only()
-async def status(ctx: commands.Context, *args) -> None:
-    """
-    Display the current status of each named extension module, or display all active modules if no name provided
-
-    Parameters
-    ----------
-    args : [str, ...] (optional)
-        The name of the module to display the status.
-        If not provided, will display all active modules instead.
-        The entry point of the discord extension will be searched at `plugins/<module name>/main.py`
-    """
-
-    await ctx.message.delete()
-
+def modulesStatus(args: list[str]) -> str:
     if len(args) <= 0:
-        loaded_modules: str = f"All active modules ({len(bot.extensions)}):\n"
-        for key in bot.extensions:
-            loaded_modules += f"- {key}\n"
-        await ctx.send(loaded_modules, delete_after=10)
+        allModules: list[str] = getAllModules()
+        result: str = f"All modules ({len(allModules)}):\n"
+        for mod in allModules:
+            result += f"- `{mod}` (status: {getModuleStatus(mod)})\n"
+        return result
 
     elif len(args) == 1:
-        is_loadded = bot.extensions.get(f"plugins.{args[0]}.main")
-        await ctx.send(f"`{args[0]}` module status: {'active :white_check_mark:' if is_loadded else 'inactive :x:'}", delete_after=10)
+        return f"`{args[0]}` module status: {getModuleStatus(args[0])}"
 
     else:
         module_status: str = f"Modules status:\n"
         for arg in args:
-            is_loadded = bot.extensions.get(f"plugins.{arg}.main")
-            module_status += f"- `{arg}` module status: {'active :white_check_mark:' if is_loadded else 'inactive :x:'}\n"
-        await ctx.send(module_status, delete_after=10)
+            module_status += f"- `{arg}` module status: {getModuleStatus(arg)}\n"
+        return module_status
+
+async def loadModules(args: list[str]) -> tuple[bool, str]:
+    if len(args) <= 0:
+        return False, "You must provide at least one module name to load."
+
+    result = ""
+    for arg in args:
+        try:
+            await bot.load_extension(f"plugins.{arg}.main")
+            config["modules"].append(arg)
+            result += f":white_check_mark: Module `{arg}` successfully loaded.\n"
+        except commands.errors.ExtensionAlreadyLoaded:
+            result += f":white_check_mark: Module `{arg}` is already loaded\n"
+        except commands.errors.ExtensionNotFound:
+            result += f":x: Module `{arg}` does not exists\n"
+        except Exception as e:
+            result += f":x: Failed to load module `{arg}`: `{e}`\n"
+    return True, result
+
+async def unloadModules(args: list[str]) -> tuple[bool, str]:
+    if len(args) <= 0:
+        return False, "You must provide at least one module name to unload."
+
+    result = ""
+    for arg in args:
+        try:
+            await bot.unload_extension(f"plugins.{arg}.main")
+            config["modules"].remove(arg)
+            result += f":white_check_mark: Module `{arg}` successfully unloaded.\n"
+        except commands.errors.ExtensionNotLoaded:
+            result += f":white_check_mark: Module `{arg}` is already unloaded\n"
+        except commands.errors.ExtensionNotFound:
+            result += f":x: Module `{arg}` does not exists\n"
+        except Exception as e:
+            result += f":x: Failed to unload module `{arg}`: `{e}`\n"
+    return True, result
+
+async def reloadModules(args: list[str]) -> tuple[bool, str]:
+    if len(args) <= 0:
+        return False, "You must provide at least one module name to reload."
+
+    result = ""
+    for arg in args:
+        try:
+            await bot.reload_extension(f"plugins.{arg}.main")
+            result += f":white_check_mark: Module `{arg}` successfully reloaded.\n"
+        except commands.errors.ExtensionNotLoaded:
+            result += f":x: Module `{arg}` is not loaded\n"
+        except commands.errors.ExtensionNotFound:
+            result += f":x: Module `{arg}` does not exists\n"
+        except Exception as e:
+            result += f":x: Failed to reload module `{arg}`: `{e}`\n"
+    return True, result
 
 # Start the bot and loop until it is shutdown.
 bot.run(TOKEN)

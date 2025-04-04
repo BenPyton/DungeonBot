@@ -5,18 +5,24 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import datetime
+import discord
 from discord.ext import commands
 from colorama import Fore, Style
 
 ###   Send messages to the client   ###
 
-async def client(ctx: commands.Context, msg: str, delete_after: int = 5):
-    return await ctx.send(msg, delete_after=delete_after)
+async def client(ctx: commands.Context | discord.Interaction, msg: str, delete_after: int = 5):
+    if isinstance(ctx, commands.Context):
+        return await ctx.send(msg, delete_after=delete_after)
+    else:
+        return await ctx.response.send_message(msg, ephemeral=True)
 
-async def success(ctx: commands.Context, msg: str, delete_after: int = 5):
+async def success(ctx: commands.Context | discord.Interaction, msg: str, delete_after: int = 5):
+    info(msg)
     return await client(ctx, f":white_check_mark: {msg}", delete_after=delete_after)
     
-async def failure(ctx: commands.Context, msg: str, delete_after: int = 5):
+async def failure(ctx: commands.Context | discord.Interaction, msg: str, delete_after: int = 5):
+    error(msg)
     return await client(ctx, f":x: {msg}", delete_after=delete_after)
 
 ###   Print in the standard output   ###

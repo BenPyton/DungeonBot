@@ -14,6 +14,7 @@ Add a `.env` file at the root directory (alongside `main.py`) and add those line
 
 ```txt
 BOT_TOKEN="your bot token here"
+OWNER="your discord ID here"
 CONFIG_DIR="config"
 ```
 
@@ -37,14 +38,22 @@ py -3 main.py
 
 ## Commands
 
-There are some core commands built into the bot itself, they help manage the modules and other crucial features.  
-All of them are only available to the administrators.
+There are some slash commands built into the bot itself, they help manage the modules and other crucial features.  
+All of them are only available to the bot owner, as they have impact on all guilds the bot is added.
 
-Command | Aliases | Description
---- | --- | ---
-`shutdown` | | Stop the bot.
-`setPrefix <prefix>` | | Set the command prefix of the bot.
-`load <module>` | `enable` `activate`| Load a specific module. For example `load ping` will load the `plugins/ping/main.py` extension.
-`unload <module>` | `disable` `deactivate` | Unload a specific module. For example `load ping` will unload the `plugins/ping/main.py` extension.
-`reload <module>` | `rl` | Reload a specific module. For example `load ping` will reload the `plugins/ping/main.py` extension.
-`status [<module> ...]` | | Display the loaded status of the named modules. If no name is provided, list all loaded modules.
+Command | Description
+--- | ---
+`/shutdown` | Stop the bot.
+`/setprefix <prefix>` | Set the command prefix of the bot.
+`/sync` | Sync the slash commands of the bot.
+`/module <command> [<args> ...]` | Manage the modules available to the bot. (see below for list of commands)
+
+Below is the list of commands available to the `/module` command.
+
+Command | Description
+--- | ---
+`list` | Display a list of all available modules (loaded or unloaded)
+`status [<module> ...]` | Display the loaded status of provided module names (or all available modules if no module name provided).
+`load <module> ...` | Load provided module names (at least one). For example `/module load ping` will load the `plugins/ping/main.py` extension.
+`unload <module> ...` | Unload provided module names (at least one). For example `load ping` will unload the `plugins/ping/main.py` extension.
+`reload <module>` | Reload provided module names (at least one). For example `load ping` will reload the `plugins/ping/main.py` extension.
