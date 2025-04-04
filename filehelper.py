@@ -25,19 +25,19 @@ def openJson(dirpath: str, filename: str):
     ensure_directory(dirpath)
     data = None
     try:
-        with open(f"{dirpath}\\{filename}", "r") as file:
+        with open(f"{dirpath}/{filename}", "r") as file:
             data = json.load(file)
     except Exception as e:
-        log.error(f"Failed to load json file '{dirpath}\\{filename}': {e}")
+        log.error(f"Failed to load json file '{dirpath}/{filename}': {e}")
     return data
 
 def saveJson(dirpath: str, filename: str, data) -> None:
     ensure_directory(dirpath)
     try:
-        with open(f"{dirpath}\\{filename}", "w+") as file:
+        with open(f"{dirpath}/{filename}", "w+") as file:
             json.dump(data, file, indent = 4)
     except Exception as e:
-        log.error(f"Failed to save json file '{dirpath}\\{filename}': {e}")
+        log.error(f"Failed to save json file '{dirpath}/{filename}': {e}")
 
 def getConfigFilename(module: str = None) -> str:
     return f"config{f'.{module}' if module else ''}.json"
