@@ -80,13 +80,15 @@ async def setprefix(interaction: discord.Interaction, new_prefix: str) -> None:
 
     await log.success(interaction, f"Command prefix successfully set to `{new_prefix}`")
 
-@bot.tree.command(description="Sync the slash commands added removed by modules")
-@predicate.app_is_bot_owner()
-async def sync(interaction: discord.Interaction) -> None:
+@bot.hybrid_command(description="Sync the slash commands added/removed by modules")
+@predicate.bot_is_bot_owner()
+async def sync(ctx: commands.Context | discord.Interaction) -> None:
+    if isinstance(ctx, commands.Context):
+        await ctx.message.delete()
     global prefix
     log.info("Syncing slash commands")
     await bot.tree.sync()
-    await log.success(interaction, "Slash commands synced successfully!\n*It may take some times to propagate to all guilds...*")
+    await log.success(ctx, "Slash commands synced successfully!\n*It may take some times to propagate to all guilds...*")
     
 ####                        ####
 #       Module Management      #
