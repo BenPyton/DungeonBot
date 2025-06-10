@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 import log
 import filehelper
 import predicate
+from helpcommand import MyHelpCommand
 
 load_dotenv()
 TOKEN: str = os.getenv('BOT_TOKEN')
@@ -23,13 +24,11 @@ if not config.get("modules"):
 if not config.get("prefix"):
     config["prefix"] = "/"
 
-prefix = config["prefix"]
-
 intents = discord.Intents.default()
 intents.messages = True
 intents.members = True
 intents.message_content = True
-bot = commands.Bot(command_prefix=prefix, intents=intents)
+bot = commands.Bot(command_prefix=config["prefix"], intents=intents, help_command=MyHelpCommand())
 
 @bot.event
 async def on_ready() -> None:
