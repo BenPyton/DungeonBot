@@ -14,7 +14,6 @@ import predicate
 from helpcommand import MyHelpCommand
 
 load_dotenv()
-TOKEN: str = os.getenv('BOT_TOKEN')
 
 config = filehelper.openConfig()
 
@@ -228,6 +227,12 @@ async def reloadModules(args: list[str]) -> tuple[bool, str]:
         except Exception as e:
             result += f":x: Failed to reload module `{arg}`: `{e}`\n"
     return True, result
+
+# Check if the bot token is provided in the environment variables.
+TOKEN: str = os.getenv('BOT_TOKEN')
+if not TOKEN:
+    log.error("No bot token provided. Please set the BOT_TOKEN environment variable.")
+    exit(1)
 
 # Start the bot and loop until it is shutdown.
 bot.run(TOKEN)
