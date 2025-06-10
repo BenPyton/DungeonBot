@@ -42,8 +42,8 @@ def saveJson(dirpath: str, filename: str, data) -> None:
 def getConfigFilename(module: str = None) -> str:
     return f"config{f'.{module}' if module else ''}.json"
 
-def openConfig(module: str = None):
+def openConfig(module: str = None) -> dict:
     return openJson(getConfigDir(), getConfigFilename(module)) or dict()
 
-def saveConfig(data, module: str = None):
+def saveConfig(data, module: str = None) -> None:
     saveJson(getConfigDir(), getConfigFilename(module), data)
