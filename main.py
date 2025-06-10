@@ -15,6 +15,8 @@ from helpcommand import MyHelpCommand
 
 load_dotenv()
 
+prefix: str = os.getenv('BOT_PREFIX', '!')
+
 config = filehelper.openConfig()
 if not config.get("modules"):
     config["modules"] = list()
@@ -23,7 +25,7 @@ intents = discord.Intents.default()
 intents.messages = True
 intents.members = True
 intents.message_content = True
-bot = commands.Bot(command_prefix=os.getenv('BOT_PREFIX', '!'), intents=intents, help_command=MyHelpCommand())
+bot = commands.Bot(command_prefix=prefix, intents=intents, help_command=MyHelpCommand())
 
 @bot.event
 async def on_ready() -> None:
@@ -116,47 +118,12 @@ def isModuleActive(module: str) -> bool:
 def getModuleStatus(module: str) -> str:
     return "active :white_check_mark:" if isModuleActive(module) else "inactive :x:"
 
-@bot.tree.command(description="Manage modules of the bot (list/status/load/unload/reload)")
-@discord.app_commands.describe(command="The command to use on the bot's modules.")
-@discord.app_commands.choices(command=[
-    discord.app_commands.Choice(name="list", value="list"),
-    discord.app_commands.Choice(name="status", value="status"),
-    discord.app_commands.Choice(name="load", value="load"),
-    discord.app_commands.Choice(name="unload", value="unload"),
-    discord.app_commands.Choice(name="reload", value="reload"),
-    ])
-@predicate.app_is_bot_owner()
-async def modules(interaction: discord.Interaction, command: str, args: str = None) -> None:
-    args_list: list[str] = args.split(' ') if args else list()
-    
-    log.info(f"User `{interaction.user.name}` used command `{command}` with args {args_list} in guild `{interaction.guild.name}`")
+@bot.group(name="modules", aliases=["mod", "plugins"], invoke_without_command=True)
+async def modules(ctx: commands.Context) -> None:
+    await log.client(ctx, f"Manages modules of the bots. Use `{prefix}help modules` to get all available subcommands.")
 
-    if command == "list":
-        await log.client(interaction, listModules())
-    elif command == "status":
-        await log.client(interaction, modulesStatus(args_list))
-    elif command == "load":
-        result: tuple[bool, str] = await loadModules(args_list)
-        if not result[0]:
-            await log.failure(interaction, result[1])
-        else:
-            await log.client(interaction, result[1])
-    elif command == "unload":
-        result: tuple[bool, str] = await unloadModules(args_list)
-        if not result[0]:
-            await log.failure(interaction, result[1])
-        else:
-            await log.client(interaction, result[1])
-    elif command == "reload":
-        result: tuple[bool, str] = await reloadModules(args_list)
-        if not result[0]:
-            await log.failure(interaction, result[1])
-        else:
-            await log.client(interaction, result[1])
-    else:
-        await log.failure(interaction, f"Unsupported command: `{command}`")
-
-def listModules() -> str:
+@modules.command(name="list", aliases=["ls"])
+async def listModules(ctx: commands.Context) -> None:
     """
     List all available modules in the `plugins` directory
     """
@@ -165,28 +132,37 @@ def listModules() -> str:
     available_modules: str = f"There are {count if count > 0 else 'no'} available module{'s' if count > 1 else ''}:\n"
     for i, dir in enumerate(allModules):
         available_modules += f"{dir}{', ' if i < count - 1 else ''}"
-    return available_modules
 
-def modulesStatus(args: list[str]) -> str:
+    await log.client(ctx, available_modules)
+
+@modules.command(name="status", aliases=["s"])
+async def modulesStatus(ctx: commands.Context, *args: str) -> None:
+    """
+    Display the loaded status of provided modules
+    """
     if len(args) <= 0:
         allModules: list[str] = getAllModules()
         result: str = f"All modules ({len(allModules)}):\n"
         for mod in allModules:
             result += f"- `{mod}` (status: {getModuleStatus(mod)})\n"
-        return result
+        await log.client(ctx, result)
 
     elif len(args) == 1:
-        return f"`{args[0]}` module status: {getModuleStatus(args[0])}"
+        await log.client(ctx, f"`{args[0]}` module status: {getModuleStatus(args[0])}")
 
     else:
         module_status: str = f"Modules status:\n"
         for arg in args:
             module_status += f"- `{arg}` module status: {getModuleStatus(arg)}\n"
-        return module_status
+        await log.client(module_status)
 
-async def loadModules(args: list[str]) -> tuple[bool, str]:
+@modules.command(name="load", aliases=["l", "enable", "activate"])
+async def loadModules(ctx: commands.Context, *args: str) -> None:
+    """
+    Try to load the provided modules
+    """
     if len(args) <= 0:
-        return False, "You must provide at least one module name to load."
+        await log.error(ctx, "You must provide at least one module name to load.")
 
     result = ""
     for arg in args:
@@ -200,11 +176,15 @@ async def loadModules(args: list[str]) -> tuple[bool, str]:
             result += f":x: Module `{arg}` does not exists\n"
         except Exception as e:
             result += f":x: Failed to load module `{arg}`: `{e}`\n"
-    return True, result
+    await log.client(ctx, result)
 
-async def unloadModules(args: list[str]) -> tuple[bool, str]:
+@modules.command(name="unload", aliases=["u", "disable", "deactivate"])
+async def unloadModules(ctx: commands.Context, *args: str) -> None:
+    """
+    Try to unload the provided modules
+    """
     if len(args) <= 0:
-        return False, "You must provide at least one module name to unload."
+        await log.error(ctx, "You must provide at least one module name to unload.")
 
     result = ""
     for arg in args:
@@ -218,11 +198,15 @@ async def unloadModules(args: list[str]) -> tuple[bool, str]:
             result += f":x: Module `{arg}` does not exists\n"
         except Exception as e:
             result += f":x: Failed to unload module `{arg}`: `{e}`\n"
-    return True, result
+    await log.client(ctx, result)
 
-async def reloadModules(args: list[str]) -> tuple[bool, str]:
+@modules.command(name="reload", aliases=["rl", "r"])
+async def reloadModules(ctx: commands.Context, *args: str) -> None:
+    """
+    Try to reload the provided modules
+    """
     if len(args) <= 0:
-        return False, "You must provide at least one module name to reload."
+        await log.error(ctx, "You must provide at least one module name to reload.")
 
     result = ""
     for arg in args:
@@ -235,7 +219,7 @@ async def reloadModules(args: list[str]) -> tuple[bool, str]:
             result += f":x: Module `{arg}` does not exists\n"
         except Exception as e:
             result += f":x: Failed to reload module `{arg}`: `{e}`\n"
-    return True, result
+    await log.client(ctx, result)
 
 # Check if the bot token is provided in the environment variables.
 TOKEN: str = os.getenv('BOT_TOKEN')
