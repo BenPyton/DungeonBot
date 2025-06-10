@@ -88,12 +88,11 @@ async def shutdown(interaction: discord.Interaction) -> None:
 
 
 
-@bot.hybrid_command(description="Sync the slash commands added/removed by modules")
+@bot.command(description="Sync the slash commands added/removed by modules")
 @predicate.bot_is_bot_owner()
-async def sync(ctx: commands.Context | discord.Interaction) -> None:
+async def sync(ctx: commands.Context) -> None:
     if isinstance(ctx, commands.Context):
         await ctx.message.delete()
-    global prefix
     log.info("Syncing slash commands")
     await bot.tree.sync()
     await log.success(ctx, "Slash commands synced successfully!\n*It may take some times to propagate to all guilds...*")
