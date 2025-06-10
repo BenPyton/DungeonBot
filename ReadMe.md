@@ -44,7 +44,6 @@ All of them are only available to the bot owner, as they have impact on all guil
 Command | Description
 --- | ---
 `/shutdown` | Stop the bot.
-`/setprefix <prefix>` | Set the command prefix of the bot.
 `/sync` | Sync the slash commands of the bot. This command is also available as standard bot command, useful when syncing for the first time.
 `/module <command> [<args> ...]` | Manage the modules available to the bot. (see below for list of commands)
 

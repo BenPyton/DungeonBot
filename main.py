@@ -20,14 +20,11 @@ config = filehelper.openConfig()
 if not config.get("modules"):
     config["modules"] = list()
 
-if not config.get("prefix"):
-    config["prefix"] = "/"
-
 intents = discord.Intents.default()
 intents.messages = True
 intents.members = True
 intents.message_content = True
-bot = commands.Bot(command_prefix=config["prefix"], intents=intents, help_command=MyHelpCommand())
+bot = commands.Bot(command_prefix=os.getenv('BOT_PREFIX', '!'), intents=intents, help_command=MyHelpCommand())
 
 @bot.event
 async def on_ready() -> None:
@@ -66,17 +63,6 @@ def cleanup() -> None:
     log.info(f"Final cleanup")
     filehelper.saveConfig(config)
 
-@bot.tree.command(description="Change the prefix for the bot's commands")
-@predicate.app_is_bot_owner()
-async def setprefix(interaction: discord.Interaction, new_prefix: str) -> None:
-    global prefix
-    log.info(f"Setting new command prefix to `{new_prefix}`")
-
-    prefix = new_prefix
-    config["prefix"] = new_prefix
-    bot.command_prefix = new_prefix
-
-    await log.success(interaction, f"Command prefix successfully set to `{new_prefix}`")
 
 @bot.hybrid_command(description="Sync the slash commands added/removed by modules")
 @predicate.bot_is_bot_owner()
