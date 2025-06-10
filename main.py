@@ -16,7 +16,6 @@ from helpcommand import MyHelpCommand
 load_dotenv()
 
 config = filehelper.openConfig()
-
 if not config.get("modules"):
     config["modules"] = list()
 
@@ -38,17 +37,46 @@ async def on_ready() -> None:
             log.error(f"Failed to load module `{module}`: {e}")
     log.info(f"Bot is ready.")
 
+def cleanup() -> None:
+    log.info(f"Final cleanup")
+    filehelper.saveConfig(config)
+
+# Handles errors that occur during command execution.
+@bot.event
+async def on_command_error(ctx: commands.Context, error: commands.CommandError) -> None:
+    if isinstance(error, commands.MissingPermissions):
+        # Handle user missing permissions
+        await log.failure(ctx, "You do not have the required permissions to use this command.")
+    elif isinstance(error, commands.BotMissingPermissions):
+        # Handle bot missing permissions
+        await log.failure(ctx, "The bot does not have the required permissions to execute this command.")
+    elif isinstance(error, commands.CheckFailure):
+        # Handle check failures (e.g., user doesn't meet the requirements)
+        await log.failure(ctx, "A check failed in the command.")
+    elif isinstance(error, commands.CommandNotFound):
+        # Handle unknown commands
+        await log.failure(ctx, "This command does not exist.")
+    else:
+        # Handle other errors
+        await log.failure(ctx, f"An unexpected error occurred while executing the command.\n```\n{error}\n```")
+
 @bot.tree.error
 async def on_app_command_error(interaction: discord.Interaction, error: discord.app_commands.AppCommandError):
-    if isinstance(error, discord.app_commands.CheckFailure):
+    if isinstance(error, discord.app_commands.MissingPermissions):
+        # Handle user missing permissions
+        await log.failure(interaction, "You do not have the required permissions to use this command.")
+    if isinstance(error, discord.app_commands.BotMissingPermissions):
+        # Handle bot missing permissions
+        await log.failure(interaction, "The bot does not have the required permissions to execute this command.")
+    elif isinstance(error, discord.app_commands.CheckFailure):
         # Handle check failures (e.g., user doesn't meet the requirements)
-        await log.failure(interaction, "You do not have permission to use this command.")
+        await log.failure(interaction, "A check failed in the command.")
     elif isinstance(error, discord.app_commands.CommandNotFound):
         # Handle unknown commands
         await log.failure(interaction, "This command does not exist.")
     else:
         # Handle other errors
-        await log.failure(interaction, "An unexpected error occurred while executing the command.")
+        await log.failure(interaction, f"An unexpected error occurred while executing the command.\n```\n{error}\n```")
 
 @bot.tree.command(description="Shutdown gracefully the bot")
 @predicate.app_is_bot_owner()
@@ -58,10 +86,6 @@ async def shutdown(interaction: discord.Interaction) -> None:
     await bot.close()
     log.info("Bot has been shut off.")
 
-
-def cleanup() -> None:
-    log.info(f"Final cleanup")
-    filehelper.saveConfig(config)
 
 
 @bot.hybrid_command(description="Sync the slash commands added/removed by modules")
