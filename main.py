@@ -22,9 +22,9 @@ if not config.get("modules"):
     config["modules"] = list()
 
 intents = discord.Intents.default()
-intents.messages = True
 intents.members = True
 intents.message_content = True
+intents.moderation = True
 bot = commands.Bot(command_prefix=prefix, intents=intents, help_command=MyHelpCommand())
 
 @bot.event
@@ -80,15 +80,9 @@ async def on_app_command_error(interaction: discord.Interaction, error: discord.
         # Handle other errors
         await log.failure(interaction, f"An unexpected error occurred while executing the command.\n```\n{error}\n```")
 
-@bot.tree.command(description="Shutdown gracefully the bot")
-@predicate.app_is_bot_owner()
-async def shutdown(interaction: discord.Interaction) -> None:
-    log.info("Shutting down bot...")
-    await log.client(interaction, "Shutting down bot...")
-    await bot.close()
-    log.info("Bot has been shut off.")
-
-
+####                       ####
+#       General Commands      #
+####                       ####
 
 @bot.command(description="Sync the slash commands added/removed by modules")
 @predicate.bot_is_bot_owner()
@@ -99,6 +93,14 @@ async def sync(ctx: commands.Context) -> None:
     await bot.tree.sync()
     await log.success(ctx, "Slash commands synced successfully!\n*It may take some times to propagate to all guilds...*")
     
+@bot.command(description="Shutdown gracefully the bot")
+@predicate.bot_is_bot_owner()
+async def shutdown(interaction: discord.Interaction) -> None:
+    log.info("Shutting down bot...")
+    await log.client(interaction, "Shutting down bot...")
+    await bot.close()
+    log.info("Bot has been shut off.")
+
 ####                        ####
 #       Module Management      #
 ####                        ####
