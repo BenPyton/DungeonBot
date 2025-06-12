@@ -1,0 +1,3 @@
+[submodule "plugins/github"]
+	path = plugins/github
+	url = https://github.com/dismob/github
