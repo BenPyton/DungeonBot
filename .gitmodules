@@ -1,3 +1,6 @@
 [submodule "plugins/github"]
 	path = plugins/github
 	url = https://github.com/dismob/github
+[submodule "plugins/levels"]
+	path = plugins/levels
+	url = https://github.com/dismob/levels
