@@ -54,11 +54,11 @@ Command | Aliases | Description
 --- | --- | ---
 `shutdown` | | Stop the bot.
 `sync` | | Sync the slash commands of the bot. This command is also available as standard bot command, useful when syncing for the first time.
-`module <subcommand> [<args> ...]` | `mod` `plugins` | Manage the modules available to the bot. (see below for list of subcommands)
+`modules <subcommand> [<args> ...]` | `mod` `plugins` | Manage the modules available to the bot. (see below for list of subcommands)
 
 Below is the list of subcommands related to the module managements.  
 
-Command | Aliases | Description
+Subcommand | Aliases | Description
 --- | --- | ---
 `list` | `ls` | Display a list of all available modules (loaded or unloaded)
 `status [<module> ...]` | `s` | Display the loaded status of provided module names (or all available modules if no module name provided).
