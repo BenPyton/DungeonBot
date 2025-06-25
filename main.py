@@ -10,6 +10,7 @@ from discord.ext import commands
 from dotenv import load_dotenv
 from dismob import log, filehelper, predicate
 from dismob.helpcommand import MyHelpCommand
+from dismob.event import Event, BotEvents
 
 load_dotenv()
 
@@ -23,7 +24,7 @@ intents = discord.Intents.default()
 intents.members = True
 intents.message_content = True
 intents.moderation = True
-bot = commands.Bot(command_prefix=prefix, intents=intents, help_command=MyHelpCommand())
+bot: commands.Bot = commands.Bot(command_prefix=prefix, intents=intents, help_command=MyHelpCommand())
 
 @bot.event
 async def on_ready() -> None:
@@ -35,6 +36,7 @@ async def on_ready() -> None:
             log.info(f"Module `{module}` successfully loaded.")
         except Exception as e:
             log.error(f"Failed to load module `{module}`: {e}")
+    BotEvents.on_ready.dispatch(bot)
     log.info(f"Bot is ready.")
 
 def cleanup() -> None:
