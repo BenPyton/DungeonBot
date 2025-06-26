@@ -14,6 +14,12 @@ from dismob.event import Event, BotEvents
 
 load_dotenv()
 
+log.setup_logger(
+    logger_name=os.getenv('LOG_NAME', 'dismob'),
+    file_level=os.getenv('LOG_FILE_LEVEL', 'INFO'),
+    console_level=os.getenv('LOG_CONSOLE_LEVEL', 'INFO')
+)
+
 prefix: str = os.getenv('BOT_PREFIX', '!')
 
 config = filehelper.openConfig()
