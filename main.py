@@ -149,21 +149,6 @@ def getModuleStatus(module: str) -> str:
 async def modules(ctx: commands.Context) -> None:
     await log.client(ctx, f"Manages modules of the bots. Use `{prefix}help modules` to get all available subcommands.")
 
-@modules.command(name="list", aliases=["ls"])
-@predicate.bot_is_bot_owner()
-@decorators.suppress_command
-async def listModules(ctx: commands.Context) -> None:
-    """
-    List all available modules in the `plugins` directory
-    """
-    allModules: list[str] = getAllModules()
-    count: int = len(allModules)
-    available_modules: str = f"There are {count if count > 0 else 'no'} available module{'s' if count > 1 else ''}:\n"
-    for i, dir in enumerate(allModules):
-        available_modules += f"{dir}{', ' if i < count - 1 else ''}"
-
-    await log.client(ctx, available_modules)
-
 @modules.command(name="status", aliases=["s"])
 @predicate.bot_is_bot_owner()
 @decorators.suppress_command
