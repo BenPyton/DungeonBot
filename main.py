@@ -107,6 +107,23 @@ async def shutdown(interaction: discord.Interaction) -> None:
     await bot.close()
     log.info("Bot has been shut off.")
 
+@bot.command(name="nick", aliases=["name"], description="Change the bot's nickname in this server")
+@commands.has_permissions(manage_guild=True)
+@decorators.suppress_command
+async def set_nick(ctx: commands.Context, *, nickname: str = None) -> None:
+    """Change the bot's nickname in the current guild. If no nickname is provided, reset to default."""
+    if not ctx.guild:
+        await log.error(ctx, "This command can only be used in a server.")
+        return
+    try:
+        await ctx.guild.me.edit(nick=nickname)
+        if nickname:
+            await log.success(ctx, f"Bot nickname changed to `{nickname}`.")
+        else:
+            await log.success(ctx, "Bot nickname reset to default.")
+    except Exception as e:
+        await log.error(ctx, f"Failed to change nickname: `{e}`")
+
 ####                        ####
 #       Module Management      #
 ####                        ####
