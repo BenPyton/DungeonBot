@@ -25,14 +25,16 @@ def setup_logger(
     """
     LOG_FILE = os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(__file__)), "bot.log"))
     logLevels = logging.getLevelNamesMapping()
+    file_logLevel = logLevels.get(file_level.upper(), logging.INFO)
+    console_logLevel = logLevels.get(console_level.upper(), logging.INFO)
 
     global logger
     logger = logging.getLogger(logger_name)
-    logger.setLevel(logLevels.get(file_level.upper(), logging.INFO))
+    logger.setLevel(min(file_logLevel, console_logLevel))
 
     # File handler
     file_handler = logging.FileHandler(LOG_FILE, encoding="utf-8")
-    file_handler.setLevel(logLevels.get(file_level.upper(), logging.INFO))
+    file_handler.setLevel(file_logLevel)
     file_formatter = logging.Formatter(
         "%(asctime)s [%(levelname)-8s] %(name)s: %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S"
@@ -69,7 +71,7 @@ def setup_logger(
             return f"{self.BOLD}{GRAY}{asctime}{self.RESET}"
 
     console_handler = logging.StreamHandler()
-    console_handler.setLevel(logLevels.get(console_level.upper(), logging.INFO))
+    console_handler.setLevel(console_logLevel)
     console_formatter = ColorFormatter(
         "%(asctime)s %(levelname)-8s %(name)s %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S"
