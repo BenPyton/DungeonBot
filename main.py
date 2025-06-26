@@ -8,7 +8,7 @@ import os
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
-from dismob import log, filehelper, predicate
+from dismob import log, filehelper, predicate, decorators
 from dismob.helpcommand import MyHelpCommand
 from dismob.event import Event, BotEvents
 
@@ -92,15 +92,15 @@ async def on_app_command_error(interaction: discord.Interaction, error: discord.
 
 @bot.command(description="Sync the slash commands added/removed by modules")
 @predicate.bot_is_bot_owner()
+@decorators.suppress_command
 async def sync(ctx: commands.Context) -> None:
-    if isinstance(ctx, commands.Context):
-        await ctx.message.delete()
     log.info("Syncing slash commands")
     await bot.tree.sync()
     await log.success(ctx, "Slash commands synced successfully!\n*It may take some times to propagate to all guilds...*")
     
 @bot.command(description="Shutdown gracefully the bot")
 @predicate.bot_is_bot_owner()
+@decorators.suppress_command
 async def shutdown(interaction: discord.Interaction) -> None:
     log.info("Shutting down bot...")
     await log.client(interaction, "Shutting down bot...")
@@ -128,11 +128,13 @@ def getModuleStatus(module: str) -> str:
 
 @bot.group(name="modules", aliases=["mod", "plugins"], invoke_without_command=True)
 @predicate.bot_is_bot_owner()
+@decorators.suppress_command
 async def modules(ctx: commands.Context) -> None:
     await log.client(ctx, f"Manages modules of the bots. Use `{prefix}help modules` to get all available subcommands.")
 
 @modules.command(name="list", aliases=["ls"])
 @predicate.bot_is_bot_owner()
+@decorators.suppress_command
 async def listModules(ctx: commands.Context) -> None:
     """
     List all available modules in the `plugins` directory
@@ -147,6 +149,7 @@ async def listModules(ctx: commands.Context) -> None:
 
 @modules.command(name="status", aliases=["s"])
 @predicate.bot_is_bot_owner()
+@decorators.suppress_command
 async def modulesStatus(ctx: commands.Context, *args: str) -> None:
     """
     Display the loaded status of provided modules
@@ -169,6 +172,7 @@ async def modulesStatus(ctx: commands.Context, *args: str) -> None:
 
 @modules.command(name="load", aliases=["l", "enable", "activate"])
 @predicate.bot_is_bot_owner()
+@decorators.suppress_command
 async def loadModules(ctx: commands.Context, *args: str) -> None:
     """
     Try to load the provided modules
@@ -192,6 +196,7 @@ async def loadModules(ctx: commands.Context, *args: str) -> None:
 
 @modules.command(name="unload", aliases=["u", "disable", "deactivate"])
 @predicate.bot_is_bot_owner()
+@decorators.suppress_command
 async def unloadModules(ctx: commands.Context, *args: str) -> None:
     """
     Try to unload the provided modules
@@ -215,6 +220,7 @@ async def unloadModules(ctx: commands.Context, *args: str) -> None:
 
 @modules.command(name="reload", aliases=["rl", "r"])
 @predicate.bot_is_bot_owner()
+@decorators.suppress_command
 async def reloadModules(ctx: commands.Context, *args: str) -> None:
     """
     Try to reload the provided modules
