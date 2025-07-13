@@ -186,7 +186,8 @@ async def loadModules(ctx: commands.Context, *args: str) -> None:
     for arg in args:
         try:
             await bot.load_extension(f"plugins.{arg}.main")
-            config["modules"].append(arg)
+            if arg not in config["modules"]:
+                config["modules"].append(arg)
             result += f":white_check_mark: Module `{arg}` successfully loaded.\n"
         except commands.errors.ExtensionAlreadyLoaded:
             result += f":white_check_mark: Module `{arg}` is already loaded\n"
@@ -194,6 +195,7 @@ async def loadModules(ctx: commands.Context, *args: str) -> None:
             result += f":x: Module `{arg}` does not exists\n"
         except Exception as e:
             result += f":x: Failed to load module `{arg}`: `{e}`\n"
+            log.error(f"Failed to load module `{arg}`: {e}")
     await log.client(ctx, result)
 
 @modules.command(name="unload", aliases=["u", "disable", "deactivate"])
@@ -218,6 +220,7 @@ async def unloadModules(ctx: commands.Context, *args: str) -> None:
             result += f":x: Module `{arg}` does not exists\n"
         except Exception as e:
             result += f":x: Failed to unload module `{arg}`: `{e}`\n"
+            log.error(f"Failed to unload module `{arg}`: {e}")
     await log.client(ctx, result)
 
 @modules.command(name="reload", aliases=["rl", "r"])
@@ -241,6 +244,7 @@ async def reloadModules(ctx: commands.Context, *args: str) -> None:
             result += f":x: Module `{arg}` does not exists\n"
         except Exception as e:
             result += f":x: Failed to reload module `{arg}`: `{e}`\n"
+            log.error(f"Failed to reload module `{arg}`: {e}")
     await log.client(ctx, result)
 
 # Check if the bot token is provided in the environment variables.
