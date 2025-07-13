@@ -60,7 +60,8 @@ Command | Aliases | Description
 --- | --- | ---
 `shutdown` | | Stop the bot.
 `sync` | | Sync the slash commands of the bot. This command is also available as standard bot command, useful when syncing for the first time.
-`nick` | `name` | Change the nickname of the bot in the current server, if no name is passed, then it will reset it to the default one.
+`nick [<name>]` | `name` | Change the nickname of the bot in the current server, if no name is passed, then it will reset it to the default one.
+`status [online\|idle\|dnd\|invisible]` | | Change the bot's status.
 `modules <subcommand> [<args> ...]` | `mod` `plugins` | Manage the modules available to the bot. (see below for list of subcommands)
 
 Below is the list of subcommands related to the module managements.  
