@@ -7,3 +7,6 @@
 [submodule "plugins/welcome"]
 	path = plugins/welcome
 	url = https://github.com/dismob/welcome
+[submodule "plugins/moderation"]
+	path = plugins/moderation
+	url = https://github.com/dismob/moderation
