@@ -36,14 +36,18 @@ BOT_PREFIX="bot."
 LOG_NAME="devbot"
 LOG_CONSOLE_LEVEL="WARNING"
 LOG_FILE_LEVEL="INFO"
+LOCALE="fr_FR"
+TZ="Europe/Paris"
 ```
 
-> [!NOTE]
+> [!NOTE]  
 > The `CONFIG_DIR` is optional and will default to `config` if not set.  
-> The `BOT_PREFIX` is optional and will default to `!` if not set.
-> The `LOG_NAME` is optional and will default to `dismob` if not set.
-> The `LOG_CONSOLE_LEVEL` is optional and will default to `INFO` if not set.
-> The `LOG_FILE_LEVEL` is optional and will default to `INFO` if not set.
+> The `BOT_PREFIX` is optional and will default to `!` if not set.  
+> The `LOG_NAME` is optional and will default to `dismob` if not set.  
+> The `LOG_CONSOLE_LEVEL` is optional and will default to `INFO` if not set.  
+> The `LOG_FILE_LEVEL` is optional and will default to `INFO` if not set.  
+> The `LOCALE` is optional  
+> The `TZ` is optional  
 
 Then to start the bot run:
 
