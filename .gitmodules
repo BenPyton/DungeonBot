@@ -10,3 +10,6 @@
 [submodule "plugins/moderation"]
 	path = plugins/moderation
 	url = https://github.com/dismob/moderation
+[submodule "plugins/logs"]
+	path = plugins/logs
+	url = https://github.com/dismob/logs.git
