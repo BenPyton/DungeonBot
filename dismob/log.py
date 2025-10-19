@@ -97,8 +97,8 @@ async def success(ctx: commands.Context | discord.Interaction, msg: str, delete_
     info(msg)
     return await client(ctx, f"{msg}", title=":white_check_mark: Success", color=discord.Color.green(), delete_after=delete_after)
     
-async def failure(ctx: commands.Context | discord.Interaction, msg: str, delete_after: int = 5):
-    error(msg)
+async def failure(ctx: commands.Context | discord.Interaction, msg: str, delete_after: int = 5, stacktrace: bool = False):
+    error(msg, stacktrace)
     return await client(ctx, f"{msg}", title=":x: Error", color=discord.Color.red(), delete_after=delete_after)
 
 # --- Logging functions ---
@@ -122,8 +122,8 @@ def warning(msg: str) -> None:
     logger.warning(msg)
 
 @require_logger
-def error(msg: str) -> None:
-    logger.error(msg, stack_info=True, stacklevel=3)
+def error(msg: str, stacktrace: bool = True) -> None:
+    logger.error(msg, stack_info=stacktrace, stacklevel=3)
 
 # --- Discord helpers ---
 
