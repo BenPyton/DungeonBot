@@ -13,3 +13,6 @@
 [submodule "plugins/logs"]
 	path = plugins/logs
 	url = https://github.com/dismob/logs.git
+[submodule "plugins/tickets"]
+	path = plugins/tickets
+	url = https://github.com/dismob/tickets.git
