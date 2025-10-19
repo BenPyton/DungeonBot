@@ -97,8 +97,8 @@ async def success(ctx: commands.Context | discord.Interaction, msg: str, delete_
     info(msg)
     return await client(ctx, f"{msg}", title=":white_check_mark: Success", color=discord.Color.green(), delete_after=delete_after)
     
-async def failure(ctx: commands.Context | discord.Interaction, msg: str, delete_after: int = 5):
-    error(msg)
+async def failure(ctx: commands.Context | discord.Interaction, msg: str, delete_after: int = 5, stacktrace: bool = False):
+    error(msg, stacktrace)
     return await client(ctx, f"{msg}", title=":x: Error", color=discord.Color.red(), delete_after=delete_after)
 
 # --- Logging functions ---
@@ -122,15 +122,15 @@ def warning(msg: str) -> None:
     logger.warning(msg)
 
 @require_logger
-def error(msg: str) -> None:
-    logger.error(msg, stack_info=True, stacklevel=3)
+def error(msg: str, stacktrace: bool = True) -> None:
+    logger.error(msg, stack_info=stacktrace, stacklevel=3)
 
 # --- Discord helpers ---
 
-async def safe_send_message(channel: discord.TextChannel, content: str = None, embed: discord.Embed = None):
+async def safe_send_message(channel: discord.TextChannel, content: str = None, embed: discord.Embed = None, view: discord.ui.View = None, file: discord.File = None) -> discord.Message | None:
     """Sends a message to a channel with rate limiting"""
     try:
-        result = await get_rate_limiter().safe_send(channel, content, embed=embed)
+        result = await get_rate_limiter().safe_send(channel, content, embed=embed, view=view, file=file)
         info(f"Message sent in {channel.name}")
         return result
     except discord.Forbidden:
@@ -143,32 +143,25 @@ async def safe_send_message(channel: discord.TextChannel, content: str = None, e
         error(f"Error when sending message: {e}")
         return None
 
-async def safe_respond(interaction: discord.Interaction, content: str = None, embed: discord.Embed = None, ephemeral: bool = False):
+async def safe_respond(interaction: discord.Interaction, content: str = None, embed: discord.Embed = None, view: discord.ui.View = None, file: discord.File = None, ephemeral: bool = False):
     """Responds to an interaction with rate limiting"""
     try:
         return await get_rate_limiter().execute_request(
-            interaction.response.send_message(content, embed=embed, ephemeral=ephemeral),
+            interaction.response.send_message(content, embed=embed, view=view, file=file, ephemeral=ephemeral),
             route='POST /interactions/{interaction_id}/{interaction_token}/callback',
             major_params={'interaction_id': interaction.id}
         )
     except discord.InteractionResponded:
         # Use followup if already responded
-        try:
-            return await get_rate_limiter().execute_request(
-                interaction.followup.send(content, embed=embed, ephemeral=ephemeral),
-                route='POST /webhooks/{application_id}/{interaction_token}',
-                major_params={'application_id': interaction.application_id}
-            )
-        except Exception as e:
-            error(f"Error in the followup: {e}")
+        safe_followup(interaction, content, embed, view, file, ephemeral)
     except Exception as e:
         error(f"Error when responding to the interaction: {e}")
 
-async def safe_followup(interaction: discord.Interaction, content: str = None, embed: discord.Embed = None, ephemeral: bool = False):
+async def safe_followup(interaction: discord.Interaction, content: str = None, embed: discord.Embed = None, view: discord.ui.View = None, file: discord.File = None, ephemeral: bool = False):
     """Sends a followup message to an interaction with rate limiting"""
     try:
         return await get_rate_limiter().execute_request(
-            interaction.followup.send(content, embed=embed, ephemeral=ephemeral),
+            interaction.followup.send(content, embed=embed, view=view, file=file, ephemeral=ephemeral),
             route='POST /webhooks/{application_id}/{interaction_token}',
             major_params={'application_id': interaction.application_id}
         )
