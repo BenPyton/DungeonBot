@@ -6,6 +6,7 @@
 
 import discord
 from discord.ext import commands
+from discord.interactions import MISSING as MISSING
 from dismob.rate_limiter import get_rate_limiter
 import logging
 import os
@@ -127,6 +128,10 @@ def error(msg: str, stacktrace: bool = True) -> None:
 
 # --- Discord helpers ---
 
+def missing_if_none(value):
+    """Returns MISSING if value is None, else returns the value"""
+    return MISSING if value is None else value
+
 async def safe_send_message(channel: discord.TextChannel, content: str = None, embed: discord.Embed = None, view: discord.ui.View = None, file: discord.File = None) -> discord.Message | None:
     """Sends a message to a channel with rate limiting"""
     try:
@@ -147,7 +152,7 @@ async def safe_respond(interaction: discord.Interaction, content: str = None, em
     """Responds to an interaction with rate limiting"""
     try:
         return await get_rate_limiter().execute_request(
-            interaction.response.send_message(content, embed=embed, view=view, file=file, ephemeral=ephemeral),
+            interaction.response.send_message(content, embed=missing_if_none(embed), view=missing_if_none(view), file=missing_if_none(file), ephemeral=ephemeral),
             route='POST /interactions/{interaction_id}/{interaction_token}/callback',
             major_params={'interaction_id': interaction.id}
         )
@@ -161,7 +166,7 @@ async def safe_followup(interaction: discord.Interaction, content: str = None, e
     """Sends a followup message to an interaction with rate limiting"""
     try:
         return await get_rate_limiter().execute_request(
-            interaction.followup.send(content, embed=embed, view=view, file=file, ephemeral=ephemeral),
+            interaction.followup.send(missing_if_none(content), embed=missing_if_none(embed), view=missing_if_none(view), file=missing_if_none(file), ephemeral=ephemeral),
             route='POST /webhooks/{application_id}/{interaction_token}',
             major_params={'application_id': interaction.application_id}
         )
