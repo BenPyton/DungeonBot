@@ -158,7 +158,7 @@ async def safe_respond(interaction: discord.Interaction, content: str = None, em
         )
     except discord.InteractionResponded:
         # Use followup if already responded
-        safe_followup(interaction, content, embed, view, file, ephemeral)
+        await safe_followup(interaction, content, embed, view, file, ephemeral)
     except Exception as e:
         error(f"Error when responding to the interaction: {e}")
 
@@ -166,7 +166,7 @@ async def safe_followup(interaction: discord.Interaction, content: str = None, e
     """Sends a followup message to an interaction with rate limiting"""
     try:
         return await get_rate_limiter().execute_request(
-            interaction.followup.send(missing_if_none(content), embed=missing_if_none(embed), view=missing_if_none(view), file=missing_if_none(file), ephemeral=ephemeral),
+            interaction.followup.send(content, embed=missing_if_none(embed), view=missing_if_none(view), file=missing_if_none(file), ephemeral=ephemeral),
             route='POST /webhooks/{application_id}/{interaction_token}',
             major_params={'application_id': interaction.application_id}
         )
