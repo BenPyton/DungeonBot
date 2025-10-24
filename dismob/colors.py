@@ -8,7 +8,7 @@ import discord
 from dismob import log
 
 # List of known discord.py color names
-known_colors: set[discord.Colour] = {
+known_colors: set[str] = {
     'teal', 'dark_teal', 'brand_green', 'green', 'dark_green',
     'blue', 'dark_blue', 'purple', 'dark_purple', 'magenta',
     'dark_magenta', 'gold', 'dark_gold', 'orange', 'dark_orange',
