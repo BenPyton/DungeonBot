@@ -8,7 +8,7 @@ from typing import (Type)
 import discord
 from dismob import log
 
-async def clear_views(bot: discord.Client, view_types: Type[discord.ui.View] | tuple[Type[discord.ui.View]]):
+async def clear_views(bot: discord.Client, view_types: Type[discord.ui.View] | tuple[Type[discord.ui.View]] | None):
     """Clear all persistent views from the bot"""
     if view_types is None:
         log.warning("No view types provided to clear_views; skipping.")
