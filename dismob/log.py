@@ -132,7 +132,7 @@ def missing_if_none(value):
     """Returns MISSING if value is None, else returns the value"""
     return MISSING if value is None else value
 
-async def safe_send_message(channel: discord.TextChannel, content: str = None, embed: discord.Embed = None, view: discord.ui.View = None, file: discord.File = None) -> discord.Message | None:
+async def safe_send_message(channel: discord.TextChannel, content: str | None = None, embed: discord.Embed | None = None, view: discord.ui.View | None = None, file: discord.File | None = None) -> discord.Message | None:
     """Sends a message to a channel with rate limiting"""
     try:
         result = await get_rate_limiter().safe_send(channel, content, embed=embed, view=view, file=file)
@@ -148,7 +148,7 @@ async def safe_send_message(channel: discord.TextChannel, content: str = None, e
         error(f"Error when sending message: {e}")
         return None
 
-async def safe_respond(interaction: discord.Interaction, content: str = None, embed: discord.Embed = None, view: discord.ui.View = None, file: discord.File = None, ephemeral: bool = False):
+async def safe_respond(interaction: discord.Interaction, content: str | None = None, embed: discord.Embed | None = None, view: discord.ui.View | None = None, file: discord.File | None = None, ephemeral: bool = False):
     """Responds to an interaction with rate limiting"""
     try:
         return await get_rate_limiter().execute_request(
@@ -158,15 +158,15 @@ async def safe_respond(interaction: discord.Interaction, content: str = None, em
         )
     except discord.InteractionResponded:
         # Use followup if already responded
-        safe_followup(interaction, content, embed, view, file, ephemeral)
+        await safe_followup(interaction, content, embed, view, file, ephemeral)
     except Exception as e:
         error(f"Error when responding to the interaction: {e}")
 
-async def safe_followup(interaction: discord.Interaction, content: str = None, embed: discord.Embed = None, view: discord.ui.View = None, file: discord.File = None, ephemeral: bool = False):
+async def safe_followup(interaction: discord.Interaction, content: str | None = None, embed: discord.Embed | None = None, view: discord.ui.View | None = None, file: discord.File | None = None, ephemeral: bool = False):
     """Sends a followup message to an interaction with rate limiting"""
     try:
         return await get_rate_limiter().execute_request(
-            interaction.followup.send(missing_if_none(content), embed=missing_if_none(embed), view=missing_if_none(view), file=missing_if_none(file), ephemeral=ephemeral),
+            interaction.followup.send(content, embed=missing_if_none(embed), view=missing_if_none(view), file=missing_if_none(file), ephemeral=ephemeral),
             route='POST /webhooks/{application_id}/{interaction_token}',
             major_params={'application_id': interaction.application_id}
         )
